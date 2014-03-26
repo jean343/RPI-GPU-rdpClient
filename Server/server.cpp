@@ -5,15 +5,14 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <cstdlib>
-#include <iostream>
-#include <boost/bind.hpp>
-#include <boost/smart_ptr.hpp>
+#include <fstream>
+
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
-#include <fstream>
-#include <iostream>
-#include "OpenCVLib.h"
+
+#include <opencv2/core.hpp>
+#include <opencv2/cudacodec.hpp>
+
 #include "fps.h"
 
 using namespace cv;
@@ -27,16 +26,16 @@ const int max_length = 1024;
 
 typedef boost::shared_ptr<tcp::socket> socket_ptr;
 
-class JPEncoderCallBack : public EncoderCallBack
+class StreamEncoder : public EncoderCallBack
 {
 public:
-	JPEncoderCallBack(socket_ptr sock, Size frameSize, double fps){
-        int buf_size = 10 * 1024;
+	StreamEncoder(socket_ptr sock){
+        int buf_size = 10 * 1024; // TODO, set the right buffer size. Needs to be small enough to have at least one buffer per frame.
         buf_.resize(buf_size);
 		this->sock = sock;
 	}
 
-    ~JPEncoderCallBack() {
+    ~StreamEncoder() {
 	}
 
     //! callback function to signal the start of bitstream that is to be encoded
@@ -48,12 +47,7 @@ public:
 
     //! callback function to signal that the encoded bitstream is ready to be written to file
     void releaseBitStream(unsigned char* data, int size) {
-		//printf("start Send packet: %d\n", size);
 		write(*sock, buffer((char*)data, size));
-		//printf("done Send packet: %d\n", size);
-        //fs.write((char*)data, size);
-        //fs.close();
-		//fps.newFrame();
 	}
 
     //! callback function to signal that the encoding operation on the frame has started
@@ -66,7 +60,6 @@ public:
 
 private:
     std::vector<uchar> buf_;
-	std::ofstream fs;
 	socket_ptr sock;
 	FPS fps;
 };
@@ -86,10 +79,9 @@ void sessionVideo(socket_ptr sock)
 	// use the previously created device context with the bitmap
 	SelectObject(hDest, hbDesktop);
 
-	Ptr<JPEncoderCallBack> callback(new JPEncoderCallBack(sock, Size(width, height), 10));
+	Ptr<StreamEncoder> callback(new StreamEncoder(sock));
 
-	//string video = "C:\\Users\\Gateway\\Desktop\\CBSA\\RemoteDesktop\\vid.avi";
-	Ptr<cudacodec::VideoWriter> writer = createVideoWriter(callback, Size(width, height), 10);
+	Ptr<cudacodec::VideoWriter> writer = createVideoWriter(callback, Size(width, height), 20); // TODO, find the right FPS
 
 
 

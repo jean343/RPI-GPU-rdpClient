@@ -12,3 +12,5 @@
 *.la
 *.a
 /Server/build
+/nbproject/private/
+/nbproject
