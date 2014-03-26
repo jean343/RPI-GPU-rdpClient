@@ -3,7 +3,7 @@ project( client )
 
 FIND_PACKAGE( Boost REQUIRED COMPONENTS thread )
 
-include_directories("/opt/vc/include/interface/vcos/pthreads")
+include_directories("/opt/vc/include/interface/vcos/pthreads/;/opt/vc/include/interface/vmcs_host/linux")
 
 
 add_executable( client client.cpp )
