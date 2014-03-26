@@ -9,6 +9,7 @@ It needs the following packages. I started on a clean version of the Raspberian 
 
 ```
 sudo apt-get install cmake
+sudo apt-get install libboost-thread-dev
 ```
 
 ```
@@ -22,8 +23,7 @@ make
 
 ###To compile the server in windows###
 
-NOTES
-=================
+###NOTES###
 From https://github.com/Hexxeh/rpi-update, update your pi.
 
 sudo rpi-update
@@ -31,3 +31,5 @@ sudo rpi-update
 Update software
 
 sudo apt-get update && sudo apt-get upgrade
+
+###Known issues and limitations###
