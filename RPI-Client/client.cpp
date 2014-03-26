@@ -58,7 +58,7 @@ enum {
     max_length = 1024
 };
 
-static int video_decode_test() {
+static int start_decode_video(char* host, char* port) {
     OMX_VIDEO_PARAM_PORTFORMATTYPE format;
     OMX_TIME_CONFIG_CLOCKSTATETYPE cstate;
     COMPONENT_T *video_decode = NULL, *video_scheduler = NULL, *video_render = NULL, *clock = NULL;
@@ -141,7 +141,7 @@ static int video_decode_test() {
         boost::asio::io_service io_service;
 
         tcp::resolver resolver(io_service);
-        tcp::resolver::query query(tcp::v4(), "192.168.0.11", "8080");
+        tcp::resolver::query query(tcp::v4(), host, port);
         tcp::resolver::iterator iterator = resolver.resolve(query);
 
         tcp::socket s(io_service);
@@ -260,12 +260,12 @@ static void FillRect( void *image, int pitch, int x, int y, int w, int h, int va
     }
 }
 
-void mouseKeyboardThread()
+void mouseKeyboardThread(char* host, char* port)
 {
     boost::asio::io_service io_service;
 
     tcp::resolver resolver(io_service);
-    tcp::resolver::query query(tcp::v4(), "192.168.0.11", "8080");
+    tcp::resolver::query query(tcp::v4(), host, port);
     tcp::resolver::iterator iterator = resolver.resolve(query);
 
     tcp::socket s(io_service);
@@ -351,9 +351,18 @@ void mouseKeyboardThread()
 }
 
 int main(int argc, char **argv) {
+    if (argc != 3)
+    {
+      std::cerr << "Usage: ./client <host> <port>\n";
+      return 1;
+    }
+    
+    char* host = argv[1];
+    char* port = argv[2];
+    
     bcm_host_init();
     
-    boost::thread t(&mouseKeyboardThread);
-    video_decode_test();
+    boost::thread t(&mouseKeyboardThread, host, port);
+    start_decode_video(host, port);
     t.join();
 }

@@ -102,12 +102,12 @@ void sessionVideo(socket_ptr sock)
 		BitBlt( hDest, 0,0, width, height, hdc, 0, 0, SRCCOPY);
 
 		GetDIBits(
-			hDest, 
-			hbDesktop, 
-			0,  
-			height,  
-			pPixels, 
-			&bmi,  
+			hDest,
+			hbDesktop,
+			0,
+			height,
+			pPixels,
+			&bmi,
 			DIB_RGB_COLORS
 		);
 
@@ -195,6 +195,8 @@ void session(socket_ptr sock)
 			sessionVideo(sock);
 		} else if (data[0] == 'b'){
 			sessionKeystroke(sock);
+		} else {
+			std::cout << "Received a connection with a wrong identification buffer " << std::string(data, length) << std::endl;
 		}
 	}
 	catch (std::exception& e)
@@ -216,11 +218,19 @@ void server(io_service& io_service, short port)
 
 int main(int argc, char* argv[])
 {
+    if (argc != 2)
+    {
+      std::cerr << "Usage: ./server <port>\n";
+      return 1;
+    }
+
+    short port = atoi(argv[1]);
+
 	try
 	{
 		io_service io_service;
 
-		server(io_service, 8080);
+		server(io_service, port);
 	}
 	catch (std::exception& e)
 	{
