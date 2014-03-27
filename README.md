@@ -2,6 +2,8 @@ RPI-GPU-rdpClient
 =================
 
 Hardware accelerated raspberry pi client for windows PC.
+It is more a proof-of-concept to show that OpenMAX can be used as a RDP viewer rather than a finished product.
+There is no authentication, use at your own risk.
 
 ### To compile the client on the Raspberry PI ###
 
@@ -49,9 +51,10 @@ sudo apt-get update && sudo apt-get upgrade
 ```
 
 ### Known issues and limitations ###
+- There is no audio
 - There is no authentication, use only in a local LAN or under a VPN.
 - Optimized to use a graphic card running CUDA on the windows machine. Works without an encoder, but it is slower.
 - Uses ```GetDC``` and ```BitBlt``` to capture the screen, it works well on Win 7 and 8, but it is slow on XP.
-  - It does not work for full screen games using DirectX
+  - It does not work for full screen games using DirectX or OpenGL
   - It could be improved by adding the hook from https://github.com/spazzarama/Direct3DHook
   - It could be improved by using Win 8 ```DuplicateOutput``` WDDM 1.2
