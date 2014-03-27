@@ -351,6 +351,8 @@ void mouseKeyboardThread(char* host, char* port)
 }
 
 int main(int argc, char **argv) {
+    std::cout << "Version 0.9" << endl;
+    
     if (argc != 3)
     {
       std::cerr << "Usage: ./client <host> <port>\n";

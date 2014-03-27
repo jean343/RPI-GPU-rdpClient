@@ -12,8 +12,11 @@
 
 #include <opencv2/core.hpp>
 #include <opencv2/cudacodec.hpp>
+//#include <opencv2/highgui.hpp>
 
 #include "fps.h"
+#include "monitor.h"
+#include "params.h"
 
 using namespace cv;
 using namespace cuda;
@@ -59,29 +62,32 @@ public:
 	}
 
 private:
-    std::vector<uchar> buf_;
+    vector<uchar> buf_;
 	socket_ptr sock;
 	FPS fps;
 };
 
-void sessionVideo(socket_ptr sock)
+void sessionVideo(socket_ptr sock, RECT screen)
 {
 	HDC hdc = GetDC(NULL); // get the desktop device context
 	HDC hDest = CreateCompatibleDC(hdc); // create a device context to use yourself
 
 	// get the height and width of the screen
-	int height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-	int width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+	int height = screen.bottom - screen.top;
+	int width = screen.right - screen.left;
+
+	int virtualScreenHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+	int virtualScreenWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN);
 
 	// create a bitmap
-	HBITMAP hbDesktop = CreateCompatibleBitmap( hdc, width, height);
+	HBITMAP hbDesktop = CreateCompatibleBitmap( hdc, virtualScreenWidth, virtualScreenHeight);
 
 	// use the previously created device context with the bitmap
 	SelectObject(hDest, hbDesktop);
 
 	Ptr<StreamEncoder> callback(new StreamEncoder(sock));
 
-	Ptr<cudacodec::VideoWriter> writer = createVideoWriter(callback, Size(width, height), 20); // TODO, find the right FPS
+	Ptr<cudacodec::VideoWriter> writer = createVideoWriter(callback, Size(width, height), 30); // TODO, find the right FPS
 
 
 
@@ -99,7 +105,7 @@ void sessionVideo(socket_ptr sock)
 	while(true){
 
 		// copy from the desktop device context to the bitmap device context
-		BitBlt( hDest, 0,0, width, height, hdc, 0, 0, SRCCOPY);
+		BitBlt( hDest, 0,0, width, height, hdc, screen.left, screen.top, SRCCOPY);
 
 		GetDIBits(
 			hDest,
@@ -113,6 +119,10 @@ void sessionVideo(socket_ptr sock)
 
 
 		Mat image(Size(width, height), CV_8UC4, pPixels);
+
+		/*imshow("image", image);
+		waitKey(1);*/
+
 		GpuMat gpuImage(image);
 		writer->write(gpuImage);
 
@@ -127,7 +137,7 @@ struct SendStruct {
     int button;
     int keycode;
 };
-void sessionKeystroke(socket_ptr sock)
+void sessionKeystroke(socket_ptr sock, RECT screen)
 {
 	char data[sizeof(SendStruct)];
 	boost::system::error_code error;
@@ -146,7 +156,7 @@ void sessionKeystroke(socket_ptr sock)
 		::ZeroMemory(&input,sizeof(INPUT));
 		switch(s->type){
 			case 0: // MotionNotify
-				SetCursorPos(s->x, s->y);
+				SetCursorPos(s->x + screen.left, s->y + screen.top);
 				break;
 
 			case 1:
@@ -177,7 +187,7 @@ void sessionKeystroke(socket_ptr sock)
 		}
 	}
 }
-void session(socket_ptr sock)
+void session(socket_ptr sock, RECT screenCoordinates)
 {
 	try
 	{
@@ -192,49 +202,69 @@ void session(socket_ptr sock)
 			throw boost::system::system_error(error); // Some other error.
 
 		if (data[0] == 'a'){
-			sessionVideo(sock);
+			sessionVideo(sock, screenCoordinates);
 		} else if (data[0] == 'b'){
-			sessionKeystroke(sock);
+			sessionKeystroke(sock, screenCoordinates);
 		} else {
-			std::cout << "Received a connection with a wrong identification buffer " << std::string(data, length) << std::endl;
+			cout << "Received a connection with a wrong identification buffer " << string(data, length) << endl;
 		}
 	}
-	catch (std::exception& e)
+	catch (exception& e)
 	{
-		std::cerr << "Exception in thread: " << e.what() << "\n";
+		cerr << "Exception in thread: " << e.what() << "\n";
 	}
 }
 
-void server(io_service& io_service, short port)
+void server(io_service& io_service, short port, RECT screenCoordinates)
 {
 	tcp::acceptor a(io_service, tcp::endpoint(tcp::v4(), port));
 	for (;;)
 	{
 		socket_ptr sock(new tcp::socket(io_service));
 		a.accept(*sock);
-		boost::thread t(boost::bind(session, sock));
+		boost::thread t(boost::bind(session, sock, screenCoordinates));
 	}
 }
 
-int main(int argc, char* argv[])
+int main(int argc, const char* argv[])
 {
-    if (argc != 2)
+    cout << "Version 0.9" << endl;
+	Params params(argc, argv);
+    if (params.port == -1)
     {
-      std::cerr << "Usage: ./server <port>\n";
-      return 1;
+		cerr << "Usage: ./server [options] port <#>" << endl;
+		cerr << "monitor <n>\n";
+		cerr << "Sample: ./server monitor 1 port 8080" << endl;
+		return 1;
     }
 
-    short port = atoi(argv[1]);
+	Monitor monitor;
+	RECT screenCoordinates;
+	int monitorCount = GetSystemMetrics(SM_CMONITORS);
+	if (monitorCount > 1 && params.monitor == -1) {
+		cerr << "There are more than one monitor available, select which monitor to use with\n./server -monitor <n> <port>" << endl;
+		return 1;
+	} else {
+		if (params.monitor < 0 || params.monitor >= monitor.monitors.size()) {
+			cerr << "The chosen monitor " << params.monitor << " is invalid, select from the following:\n";
+			for (int i=0;i<monitor.monitors.size();i++) {
+				RECT r = monitor.monitors[i];
+				cerr << "Monitor " << i << ":" << "["<<r.left<<" "<<r.top<<","<<r.bottom<<" "<<r.right<<"]" << endl;
+			}
+			return 1;
+		}
+		screenCoordinates = monitor.monitors[params.monitor];
+	}
 
 	try
 	{
 		io_service io_service;
 
-		server(io_service, port);
+		server(io_service, params.port, screenCoordinates);
 	}
-	catch (std::exception& e)
+	catch (exception& e)
 	{
-		std::cerr << "Exception: " << e.what() << "\n";
+		cerr << "Exception: " << e.what() << "\n";
 	}
 	return 0;
 }
