@@ -53,6 +53,7 @@ extern "C" {
 #include "mouse.h"
 
 using boost::asio::ip::tcp;
+using namespace std;
 
 enum {
     max_length = 1024
@@ -154,8 +155,8 @@ static int start_decode_video(char* host, char* port) {
             // feed data and wait until we get port settings changed
             unsigned char *dest = buf->pBuffer;
 
-            data_len += boost::asio::read(s, boost::asio::buffer(dest, buf->nAllocLen - data_len));
-            //data_len += fread(dest, 1, buf->nAllocLen-data_len, in);
+            int bufferSize = min(buf->nAllocLen, 10 * 1024);
+            data_len += boost::asio::read(s, boost::asio::buffer(dest, bufferSize));
 
             if (port_settings_changed == 0 &&
                 ((data_len > 0 && ilclient_remove_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1) == 0) ||
