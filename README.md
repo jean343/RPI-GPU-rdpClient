@@ -34,6 +34,8 @@ make
 ./client
 
 ###To compile the server in windows###
+- Install CMAKE
+- Install OpenCV
 
 ### Contribute ###
 
