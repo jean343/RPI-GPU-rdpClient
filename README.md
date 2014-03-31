@@ -34,6 +34,10 @@ make
 ./client
 
 ###To compile the server in windows###
+- Install CMAKE, OpenCV (2.4.8) and Boost
+- In cmake
+  - Set OpenCV_DIR to the root of OpenCV build folder
+  - Set BOOST_ROOT to the root of the 
 
 ### Contribute ###
 
