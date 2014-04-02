@@ -155,7 +155,7 @@ static int start_decode_video(char* host, char* port) {
             // feed data and wait until we get port settings changed
             unsigned char *dest = buf->pBuffer;
 
-            int bufferSize = min(buf->nAllocLen, 10 * 1024);
+            int bufferSize = std::min((int)buf->nAllocLen, 10 * 1024);
             data_len += boost::asio::read(s, boost::asio::buffer(dest, bufferSize));
 
             if (port_settings_changed == 0 &&
