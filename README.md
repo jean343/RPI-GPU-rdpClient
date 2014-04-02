@@ -2,6 +2,10 @@ RPI-GPU-rdpClient
 =================
 
 Hardware accelerated raspberry pi client for windows PC.
+It is more a proof-of-concept to show that OpenMAX can be used as a RDP viewer rather than a finished product.
+There is no authentication, use at your own risk.
+
+It uses a NVIDIA graphic card to encode H.264 video, and OpenMAX to display the video. It can achieve 1080P 30FPS RDP on a RPI with a relatively low latency of ~100ms.
 
 ### To compile the client on the Raspberry PI ###
 
@@ -29,9 +33,17 @@ make
 ```
 
 ### To run the client ###
-./client
+./client <host> <port>
 
 ###To compile the server in windows###
+- Install CMAKE, OpenCV (3.0 from GIT) and Boost
+- In cmake under the Server folder
+  - Set OpenCV_DIR to the root of OpenCV build folder
+  - Set BOOST_ROOT to the root of the Boost folder
+- Build, I used Visual Studio
+
+### To run the server ###
+./server monitor 0 port 8080
 
 ### Contribute ###
 
@@ -49,9 +61,11 @@ sudo apt-get update && sudo apt-get upgrade
 ```
 
 ### Known issues and limitations ###
+- There is no audio
 - There is no authentication, use only in a local LAN or under a VPN.
-- Optimized to use a graphic card running CUDA on the windows machine. Works without an encoder, but it is slower.
+- Optimized to use a graphic card running CUDA on the windows machine. It needs OpenCV in order to use the nvidia hardware encoder NVCENC.
+- I can't find a hardware H.264 encoder which works in a virtual machine. This software does not work on a virtual machine.
 - Uses ```GetDC``` and ```BitBlt``` to capture the screen, it works well on Win 7 and 8, but it is slow on XP.
-  - It does not work for full screen games using DirectX
+  - It does not work for full screen games using DirectX or OpenGL
   - It could be improved by adding the hook from https://github.com/spazzarama/Direct3DHook
   - It could be improved by using Win 8 ```DuplicateOutput``` WDDM 1.2
