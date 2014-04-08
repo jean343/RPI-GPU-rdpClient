@@ -17,6 +17,7 @@
 #include "fps.h"
 #include "monitor.h"
 #include "params.h"
+#include "FFMPEG_encoding.hpp"
 
 using namespace cv;
 using namespace cuda;
@@ -258,6 +259,12 @@ void server(io_service& io_service, short port, RECT screenCoordinates)
 
 int main(int argc, const char* argv[])
 {
+	FFMPEG_encoding ffmpeg;
+	ffmpeg.load();
+    ffmpeg.video_encode_example("test.h264");
+
+	system("pause");
+
     cout << "Version 0.9" << endl;
 	Params params(argc, argv);
     if (params.port == -1)
