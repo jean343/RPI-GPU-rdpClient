@@ -86,19 +86,21 @@ void sessionVideo(socket_ptr sock, RECT screen)
 	// use the previously created device context with the bitmap
 	SelectObject(hDest, hbDesktop);
 
-	Ptr<StreamEncoder> callback(new StreamEncoder(sock));
+	//Ptr<StreamEncoder> callback(new StreamEncoder(sock));
+	//Ptr<cudacodec::VideoWriter> writer = createVideoWriter(callback, Size(width, height), 30); // TODO, find the right FPS
+	
+	FFMPEG_encoding ffmpeg;
+	ffmpeg.load(width, height, sock);
+    //ffmpeg.video_encode_example("test.h264");
 
-	Ptr<cudacodec::VideoWriter> writer = createVideoWriter(callback, Size(width, height), 30); // TODO, find the right FPS
 
-
-
-	BITMAPINFO bmi = {0}; 
-	bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader); 
-	bmi.bmiHeader.biWidth = width; 
-	bmi.bmiHeader.biHeight = -height; 
-	bmi.bmiHeader.biPlanes = 1; 
-	bmi.bmiHeader.biBitCount = 32; 
-	bmi.bmiHeader.biCompression = BI_RGB; 
+	BITMAPINFO bmi = {0};
+	bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
+	bmi.bmiHeader.biWidth = width;
+	bmi.bmiHeader.biHeight = -height;
+	bmi.bmiHeader.biPlanes = 1;
+	bmi.bmiHeader.biBitCount = 32;
+	bmi.bmiHeader.biCompression = BI_RGB;
 
 	RGBQUAD *pPixels = new RGBQUAD[width * height]; 
 
@@ -121,14 +123,17 @@ void sessionVideo(socket_ptr sock, RECT screen)
 
 		Mat image(Size(width, height), CV_8UC4, pPixels);
 
+		ffmpeg.write(width, height, pPixels);
+
 		/*imshow("image", image);
 		waitKey(1);*/
 
-		GpuMat gpuImage(image);
-		writer->write(gpuImage);
+		//GpuMat gpuImage(image);
+		//writer->write(gpuImage);
 
 		fps.newFrame();
 	}
+	ffmpeg.close();
 }
 
 struct SendStruct {
@@ -259,12 +264,6 @@ void server(io_service& io_service, short port, RECT screenCoordinates)
 
 int main(int argc, const char* argv[])
 {
-	FFMPEG_encoding ffmpeg;
-	ffmpeg.load();
-    ffmpeg.video_encode_example("test.h264");
-
-	system("pause");
-
     cout << "Version 0.9" << endl;
 	Params params(argc, argv);
     if (params.port == -1)

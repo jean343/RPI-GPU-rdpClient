@@ -34,24 +34,21 @@ extern "C" {
 	#include <libavutil/samplefmt.h>
 };
 
+using namespace boost::asio;
+using ip::tcp;
+
+typedef boost::shared_ptr<tcp::socket> socket_ptr;
+
+uint8_t endcode[] = { 0, 0, 1, 0xb7 };
 class FFMPEG_encoding {
 public:
-	void load() {
+	void load(int width, int height, socket_ptr sock) {
+		this->sock = sock;
+		c = NULL;
+		codec_id = AV_CODEC_ID_H264;
+		i=0;
+
 		avcodec_register_all();
-	}
-
-	void video_encode_example(const char *filename)
-	{
-		AVCodecID codec_id = AV_CODEC_ID_H264;
-		AVCodec *codec;
-		AVCodecContext *c= NULL;
-		int i, ret, x, y, got_output;
-		FILE *f;
-		AVFrame *frame;
-		AVPacket pkt;
-		uint8_t endcode[] = { 0, 0, 1, 0xb7 };
-
-		printf("Encode video file %s\n", filename);
 
 		/* find the mpeg1 video encoder */
 		codec = avcodec_find_encoder(codec_id);
@@ -69,8 +66,8 @@ public:
 		/* put sample parameters */
 		c->bit_rate = 400000;
 		/* resolution must be a multiple of two */
-		c->width = 352;
-		c->height = 288;
+		c->width = width;
+		c->height = height;
 		/* frames per second */
 		AVRational r;
 		r.den=1;
@@ -84,10 +81,11 @@ public:
 		 */
 		c->gop_size = 10;
 		c->max_b_frames = 1;
-		c->pix_fmt = AV_PIX_FMT_YUV420P;
+		c->pix_fmt = AV_PIX_FMT_YUV420P;//AV_PIX_FMT_YUV444P;
 
+		// ultrafast,superfast, veryfast, faster, fast, medium, slow, slower, veryslow
 		if (codec_id == AV_CODEC_ID_H264)
-			av_opt_set(c->priv_data, "preset", "slow", 0);
+			av_opt_set(c->priv_data, "preset", "ultrafast", 0);
 
 		/* open it */
 		if (avcodec_open2(c, codec, NULL) < 0) {
@@ -95,11 +93,11 @@ public:
 			exit(1);
 		}
 
-		f = fopen(filename, "wb");
+		/*f = fopen(filename.c_str(), "wb");
 		if (!f) {
 			fprintf(stderr, "Could not open %s\n", filename);
 			exit(1);
-		}
+		}*/
 
 		frame = av_frame_alloc();
 		if (!frame) {
@@ -112,57 +110,61 @@ public:
 
 		/* the image can be allocated by any means and av_image_alloc() is
 		 * just the most convenient way if av_malloc() is to be used */
-		ret = av_image_alloc(frame->data, frame->linesize, c->width, c->height,
+		int ret = av_image_alloc(frame->data, frame->linesize, c->width, c->height,
 							 c->pix_fmt, 32);
 		if (ret < 0) {
 			fprintf(stderr, "Could not allocate raw picture buffer\n");
 			exit(1);
 		}
+	}
+	void write(int width, int height, RGBQUAD *pPixels) {
+		av_init_packet(&pkt);
+		pkt.data = NULL;    // packet data will be allocated by the encoder
+		pkt.size = 10000;
 
-		/* encode 1 second of video */
-		for (i = 0; i < 250; i++) {
-			av_init_packet(&pkt);
-			pkt.data = NULL;    // packet data will be allocated by the encoder
-			pkt.size = 0;
+		fflush(stdout);
+		
+		for (int y = 0; y < c->height; y++) {
+			for (int x = 0; x < c->width; x++) {
+				
+				RGBQUAD px = pPixels[y*width+x];
 
-			fflush(stdout);
-			/* prepare a dummy image */
-			/* Y */
-			for (y = 0; y < c->height; y++) {
-				for (x = 0; x < c->width; x++) {
-					frame->data[0][y * frame->linesize[0] + x] = x + y + i * 3;
-				}
-			}
+				int Y =  0.299 * px.rgbRed + 0.587 * px.rgbGreen + 0.114 * px.rgbBlue;
+				int U  = -0.147 * px.rgbRed - 0.289 * px.rgbGreen + 0.436 *  px.rgbBlue + 128;
+				int V  =  0.615 * px.rgbRed - 0.515 * px.rgbGreen - 0.100 * px.rgbBlue + 128;
 
-			/* Cb and Cr */
-			for (y = 0; y < c->height/2; y++) {
-				for (x = 0; x < c->width/2; x++) {
-					frame->data[1][y * frame->linesize[1] + x] = 128 + y + i * 2;
-					frame->data[2][y * frame->linesize[2] + x] = 64 + x + i * 5;
-				}
-			}
-
-			frame->pts = i;
-
-			/* encode the image */
-			ret = avcodec_encode_video2(c, &pkt, frame, &got_output);
-			if (ret < 0) {
-				fprintf(stderr, "Error encoding frame\n");
-				exit(1);
-			}
-
-			if (got_output) {
-				printf("Write frame %3d (size=%5d)\n", i, pkt.size);
-				fwrite(pkt.data, 1, pkt.size, f);
-				av_free_packet(&pkt);
+				frame->data[0][y * frame->linesize[0] + x] = Y;
+				//frame->data[1][y * frame->linesize[0] + x] = U;
+				//frame->data[2][y * frame->linesize[0] + x] = V;
+				
+				frame->data[1][(y >> 1) * frame->linesize[1] + (x >> 1)] = U;
+				frame->data[2][(y >> 1) * frame->linesize[2] + (x >> 1)] = V;
 			}
 		}
 
+		frame->pts = i;
+		i++;
+		/* encode the image */
+		int got_output;
+		int ret = avcodec_encode_video2(c, &pkt, frame, &got_output);
+		if (ret < 0) {
+			fprintf(stderr, "Error encoding frame\n");
+			exit(1);
+		}
+
+		if (got_output) {
+			printf("Write frame (size=%5d)\n", pkt.size);
+			//fwrite(pkt.data, 1, pkt.size, f);
+			boost::asio::write(*sock, buffer((char*)pkt.data, pkt.size));
+			av_free_packet(&pkt);
+		}
+	}
+	void close () {
 		/* get the delayed frames */
-		for (got_output = 1; got_output; i++) {
+		/*for (got_output = 1; got_output; i++) {
 			fflush(stdout);
 
-			ret = avcodec_encode_video2(c, &pkt, NULL, &got_output);
+			int ret = avcodec_encode_video2(c, &pkt, NULL, &got_output);
 			if (ret < 0) {
 				fprintf(stderr, "Error encoding frame\n");
 				exit(1);
@@ -173,15 +175,23 @@ public:
 				fwrite(pkt.data, 1, pkt.size, f);
 				av_free_packet(&pkt);
 			}
-		}
+		}*/
 
 		/* add sequence end code to have a real mpeg file */
-		fwrite(endcode, 1, sizeof(endcode), f);
-		fclose(f);
+		//fwrite(endcode, 1, sizeof(endcode), f);
+		//fclose(f);
 
 		avcodec_close(c);
 		av_free(c);
 		av_freep(&frame->data[0]);
 		av_frame_free(&frame);
 	}
+private:
+	AVCodecID codec_id;
+	AVCodec *codec;
+	AVCodecContext *c;
+	AVFrame *frame;
+	AVPacket pkt;
+	socket_ptr sock;
+	int i;
 };
