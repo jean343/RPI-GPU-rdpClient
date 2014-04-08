@@ -10,9 +10,9 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 
-#include <opencv2/core.hpp>
+#include <opencv2/opencv.hpp>
 #include <opencv2/cudacodec.hpp>
-//#include <opencv2/highgui.hpp>
+#include <opencv2/highgui.hpp>
 
 #include "fps.h"
 #include "monitor.h"
@@ -160,14 +160,44 @@ void sessionKeystroke(socket_ptr sock, RECT screen)
 				break;
 
 			case 1:
+				switch (s->button) {
+				case 1: // left button
+					input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+					break;
+				case 2: // middle button
+					input.mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
+					break;
+				case 3: // third button
+					input.mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
+					break;
+				case 4: // scroll up
+					input.mi.dwFlags = MOUSEEVENTF_WHEEL;
+					input.mi.mouseData = 100;
+					break;
+				case 5: // scroll down
+					input.mi.dwFlags = MOUSEEVENTF_WHEEL;
+					input.mi.mouseData = -100;
+					break;
+				}
 				input.type      = INPUT_MOUSE;
-				input.mi.dwFlags  = MOUSEEVENTF_LEFTDOWN;
 				::SendInput(1,&input,sizeof(INPUT));
 				break;
 			case 2:
-				input.type      = INPUT_MOUSE;
-				input.mi.dwFlags  = MOUSEEVENTF_LEFTUP;
-				::SendInput(1,&input,sizeof(INPUT));
+				switch (s->button) {
+				case 1: // left button
+					input.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+					break;
+				case 2: // middle button
+					input.mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
+					break;
+				case 3: // third button
+					input.mi.dwFlags = MOUSEEVENTF_RIGHTUP;
+					break;
+				}
+				if (input.mi.dwFlags) {
+					input.type      = INPUT_MOUSE;
+					::SendInput(1,&input,sizeof(INPUT));
+				}
 				break;
 
 			case 3:
@@ -255,6 +285,9 @@ int main(int argc, const char* argv[])
 		}
 		screenCoordinates = monitor.monitors[params.monitor];
 	}
+	
+	//socket_ptr sock;
+	//sessionVideo(sock, screenCoordinates); // TODO test
 
 	try
 	{
