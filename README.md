@@ -1,11 +1,13 @@
 RPI-GPU-rdpClient
 =================
 
+Video on youtube: http://youtu.be/3HJuHhiXxuE
+
 Hardware accelerated raspberry pi client for windows PC.
 It is more a proof-of-concept to show that OpenMAX can be used as a RDP viewer rather than a finished product.
 There is no authentication, use at your own risk.
 
-It uses a NVIDIA graphic card to encode H.264 video, and OpenMAX to display the video. It can achieve 1080P 30FPS RDP on a RPI with a relatively low latency of ~100ms.
+It uses a NVIDIA graphic card to encode H.264 video, and OpenMAX to display the video. It can achieve 1080P 30FPS RDP on a RPI with a relatively low latency of ~200ms.
 
 ### To compile the client on the Raspberry PI ###
 
