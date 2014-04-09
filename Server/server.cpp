@@ -10,7 +10,13 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 
-#ifdef HAVE_OPENCV
+#include "fps.h"
+#include "monitor.h"
+#include "params.h"
+#include "FFMPEG_encoding.hpp"
+#include "config.h"
+
+#ifdef OpenCV_FOUND
 	#include <opencv2/opencv.hpp>
 	#include <opencv2/cudacodec.hpp>
 	#include <opencv2/highgui.hpp>
@@ -18,11 +24,6 @@
 	using namespace cuda;
 	using namespace cudacodec;
 #endif
-
-#include "fps.h"
-#include "monitor.h"
-#include "params.h"
-#include "FFMPEG_encoding.hpp"
 
 using namespace std;
 using namespace boost::asio;
@@ -32,7 +33,7 @@ const int max_length = 1024;
 
 typedef boost::shared_ptr<tcp::socket> socket_ptr;
 
-#ifdef HAVE_OPENCV
+#ifdef OpenCV_FOUND
 class StreamEncoder : public EncoderCallBack
 {
 public:
@@ -90,7 +91,7 @@ void sessionVideo(socket_ptr sock, RECT screen)
 	// use the previously created device context with the bitmap
 	SelectObject(hDest, hbDesktop);
 
-#ifdef HAVE_OPENCV
+#ifdef OpenCV_FOUND
 	Ptr<StreamEncoder> callback(new StreamEncoder(sock));
 	Ptr<cudacodec::VideoWriter> writer = createVideoWriter(callback, Size(width, height), 30); // TODO, find the right FPS
 #else
@@ -125,7 +126,7 @@ void sessionVideo(socket_ptr sock, RECT screen)
 			DIB_RGB_COLORS
 		);
 
-#ifdef HAVE_OPENCV
+#ifdef OpenCV_FOUND
 		Mat image(Size(width, height), CV_8UC4, pPixels);
 		GpuMat gpuImage(image);
 		writer->write(gpuImage);
@@ -135,7 +136,10 @@ void sessionVideo(socket_ptr sock, RECT screen)
 
 		fps.newFrame();
 	}
+#ifdef OpenCV_FOUND
+#else
 	ffmpeg.close();
+#endif
 }
 
 struct SendStruct {

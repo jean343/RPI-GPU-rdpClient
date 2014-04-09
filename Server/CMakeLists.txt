@@ -1,10 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
-INCLUDE (CheckIncludeFiles)
 
 project( server )
 
 find_package( OpenCV )
-CHECK_INCLUDE_FILES (opencv2/opencv.hpp HAVE_OPENCV)
 
 find_package( Boost REQUIRED )
 if(Boost_FOUND)
@@ -33,4 +31,4 @@ FIND_LIBRARY( FFMPEG_LIBRARY_avutil avutil
 add_executable( server server.cpp )
 target_link_libraries( server ${OpenCV_LIBS} ${Boost_LIBRARIES} ${FFMPEG_LIBRARY_avcodec} ${FFMPEG_LIBRARY_avutil})
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
