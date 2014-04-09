@@ -80,24 +80,22 @@ public:
 		 * will always be I frame irrespective to gop_size
 		 */
 		c->gop_size = 10;
-		c->max_b_frames = 1;
+		c->max_b_frames = 0;
+		c->refs = 0;
 		c->pix_fmt = AV_PIX_FMT_YUV420P;//AV_PIX_FMT_YUV444P;
 
 		// ultrafast,superfast, veryfast, faster, fast, medium, slow, slower, veryslow
-		if (codec_id == AV_CODEC_ID_H264)
-			av_opt_set(c->priv_data, "preset", "ultrafast", 0);
+		if (codec_id == AV_CODEC_ID_H264) {
+			av_opt_set(c->priv_data, "preset", "veryfast", 0);
+			av_opt_set(c->priv_data, "tune", "zerolatency", 0);
+			av_opt_set(c->priv_data, "movflags", "faststart", 0);
+		}
 
 		/* open it */
 		if (avcodec_open2(c, codec, NULL) < 0) {
 			fprintf(stderr, "Could not open codec\n");
 			exit(1);
 		}
-
-		/*f = fopen(filename.c_str(), "wb");
-		if (!f) {
-			fprintf(stderr, "Could not open %s\n", filename);
-			exit(1);
-		}*/
 
 		frame = av_frame_alloc();
 		if (!frame) {
@@ -120,7 +118,7 @@ public:
 	void write(int width, int height, RGBQUAD *pPixels) {
 		av_init_packet(&pkt);
 		pkt.data = NULL;    // packet data will be allocated by the encoder
-		pkt.size = 10000;
+		pkt.size = 0;
 
 		fflush(stdout);
 		
@@ -128,10 +126,9 @@ public:
 			for (int x = 0; x < c->width; x++) {
 				
 				RGBQUAD px = pPixels[y*width+x];
-
-				int Y =  0.299 * px.rgbRed + 0.587 * px.rgbGreen + 0.114 * px.rgbBlue;
-				int U  = -0.147 * px.rgbRed - 0.289 * px.rgbGreen + 0.436 *  px.rgbBlue + 128;
-				int V  =  0.615 * px.rgbRed - 0.515 * px.rgbGreen - 0.100 * px.rgbBlue + 128;
+				int Y = ( (  66 * px.rgbRed + 129 * px.rgbGreen +  25 * px.rgbBlue + 128) >> 8) +  16;
+				int U = ( ( -38 * px.rgbRed -  74 * px.rgbGreen + 112 * px.rgbBlue + 128) >> 8) + 128;
+				int V = ( ( 112 * px.rgbRed -  94 * px.rgbGreen -  18 * px.rgbBlue + 128) >> 8) + 128;
 
 				frame->data[0][y * frame->linesize[0] + x] = Y;
 				//frame->data[1][y * frame->linesize[0] + x] = U;
