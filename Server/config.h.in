@@ -1,1 +1,3 @@
 #cmakedefine OpenCV_FOUND
+
+#cmakedefine FFMPEG_FOUND

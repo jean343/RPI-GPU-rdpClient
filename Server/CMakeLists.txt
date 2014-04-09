@@ -16,17 +16,23 @@ include_directories(${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIR})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 
 set(FFMPEG_ROOT "" CACHE FILEPATH "Root of the FFMPEG directory, which has README.txt")
-FIND_PATH( FFMPEG_INCLUDE_DIR libavcodec/avcodec.h
-  ${FFMPEG_ROOT}/include
-)
-include_directories(${FFMPEG_INCLUDE_DIR})
+#if (FFMPEG_ROOT)
+	FIND_PATH( FFMPEG_INCLUDE_DIR libavcodec/avcodec.h
+	  ${FFMPEG_ROOT}/include
+	)
+	include_directories(${FFMPEG_INCLUDE_DIR})
 
-FIND_LIBRARY( FFMPEG_LIBRARY_avcodec avcodec
-  ${FFMPEG_ROOT}/lib
-)
-FIND_LIBRARY( FFMPEG_LIBRARY_avutil avutil
-  ${FFMPEG_ROOT}/lib
-)
+	FIND_LIBRARY( FFMPEG_LIBRARY_avcodec avcodec
+	  ${FFMPEG_ROOT}/lib
+	)
+	FIND_LIBRARY( FFMPEG_LIBRARY_avutil avutil
+	  ${FFMPEG_ROOT}/lib
+	)
+	if (FFMPEG_LIBRARY_avcodec AND FFMPEG_LIBRARY_avutil)
+		set (FFMPEG_FOUND 1)
+		message("FFMPEG found!")
+	endif()
+#endif()
 
 add_executable( server server.cpp )
 target_link_libraries( server ${OpenCV_LIBS} ${Boost_LIBRARIES} ${FFMPEG_LIBRARY_avcodec} ${FFMPEG_LIBRARY_avutil})

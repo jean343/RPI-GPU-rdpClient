@@ -13,7 +13,6 @@
 #include "fps.h"
 #include "monitor.h"
 #include "params.h"
-#include "FFMPEG_encoding.hpp"
 #include "config.h"
 
 #ifdef OpenCV_FOUND
@@ -23,6 +22,9 @@
 	using namespace cv;
 	using namespace cuda;
 	using namespace cudacodec;
+#endif
+#ifdef FFMPEG_FOUND
+	#include "FFMPEG_encoding.hpp"
 #endif
 
 using namespace std;
@@ -94,7 +96,7 @@ void sessionVideo(socket_ptr sock, RECT screen)
 #ifdef OpenCV_FOUND
 	Ptr<StreamEncoder> callback(new StreamEncoder(sock));
 	Ptr<cudacodec::VideoWriter> writer = createVideoWriter(callback, Size(width, height), 30); // TODO, find the right FPS
-#else
+#else if FFMPEG_FOUND
 	FFMPEG_encoding ffmpeg;
 	ffmpeg.load(width, height, sock);
 #endif
@@ -130,14 +132,14 @@ void sessionVideo(socket_ptr sock, RECT screen)
 		Mat image(Size(width, height), CV_8UC4, pPixels);
 		GpuMat gpuImage(image);
 		writer->write(gpuImage);
-#else
+#else if FFMPEG_FOUND
 		ffmpeg.write(width, height, pPixels);
 #endif
 
 		fps.newFrame();
 	}
 #ifdef OpenCV_FOUND
-#else
+#else if FFMPEG_FOUND
 	ffmpeg.close();
 #endif
 }
