@@ -49,6 +49,7 @@ make
     - Set OpenCV_DIR to the root of OpenCV build folder
   - Download FFMPEG from http://ffmpeg.zeranoe.com/builds/, need the dev and shared
     - Set FFMPEG_ROOT to the root of FFMPEG dev folder
+    - Add the bin folder of the shared zip to your path, or copy the DLLs
 
 ### To run the server ###
 ./server monitor 0 port 8080
