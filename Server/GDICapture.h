@@ -33,7 +33,7 @@ public:
 		pPixels = new RGBQUAD[width * height];
 
 	}
-	int getNextFrame(RGBQUAD** pPixels)
+	int getNextFrame(RGBQUAD** data)
 	{
 		// copy from the desktop device context to the bitmap device context
 		BitBlt( hDest, 0,0, width, height, hdc, screen.left, screen.top, SRCCOPY);
@@ -43,11 +43,11 @@ public:
 			hbDesktop,
 			0,
 			height,
-			*pPixels,
+			pPixels,
 			&bmi,
 			DIB_RGB_COLORS
 		);
-
+		*data = pPixels;
 		return 0;
 	}
 	void doneNextFrame()

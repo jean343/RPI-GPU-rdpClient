@@ -31,15 +31,16 @@ if (FFMPEG_ROOT)
 	)
 	if (FFMPEG_LIBRARY_avcodec AND FFMPEG_LIBRARY_avutil)
 		set (FFMPEG_FOUND 1)
+		set (FFMPEG_LIBRARIES "${FFMPEG_LIBRARY_avcodec};${FFMPEG_LIBRARY_avutil}")
 		message("FFMPEG found!")
 	endif()
 endif()
 
 #Files for WDDM
 find_package( DirectX )
-include_directories(${DXGI_INCLUDE})
+include_directories(${DXGI_INCLUDES})
 
 add_executable( server server.cpp )
-target_link_libraries( server ${OpenCV_LIBS} ${Boost_LIBRARIES} ${FFMPEG_LIBRARY_avcodec} ${FFMPEG_LIBRARY_avutil} ${DXGI_LIBRARY1} ${DXGI_LIBRARY2})
+target_link_libraries( server ${OpenCV_LIBS} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${DXGI_LIBRARIES})
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
