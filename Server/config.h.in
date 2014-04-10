@@ -1,3 +1,5 @@
 #cmakedefine OpenCV_FOUND
 
 #cmakedefine FFMPEG_FOUND
+
+#cmakedefine DIRECTX_FOUND

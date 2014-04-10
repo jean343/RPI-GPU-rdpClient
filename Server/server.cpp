@@ -15,6 +15,12 @@
 #include "params.h"
 #include "config.h"
 
+#include "GDICapture.h"
+
+#ifdef DIRECTX_FOUND
+	#include "WDDMCapture.h"
+#endif
+
 #ifdef OpenCV_FOUND
 	#include <opencv2/opencv.hpp>
 	#include <opencv2/cudacodec.hpp>
@@ -77,21 +83,17 @@ private:
 
 void sessionVideo(socket_ptr sock, RECT screen)
 {
-	HDC hdc = GetDC(NULL); // get the desktop device context
-	HDC hDest = CreateCompatibleDC(hdc); // create a device context to use yourself
+	#ifdef DIRECTX_FOUND
+	WDDMCapture capture;
+	#else
+	GDICapture capture;
+	#endif
 
+	capture.init(screen);
+	
 	// get the height and width of the screen
 	int height = screen.bottom - screen.top;
 	int width = screen.right - screen.left;
-
-	int virtualScreenHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-	int virtualScreenWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-
-	// create a bitmap
-	HBITMAP hbDesktop = CreateCompatibleBitmap( hdc, virtualScreenWidth, virtualScreenHeight);
-
-	// use the previously created device context with the bitmap
-	SelectObject(hDest, hbDesktop);
 
 #ifdef OpenCV_FOUND
 	Ptr<StreamEncoder> callback(new StreamEncoder(sock));
@@ -102,41 +104,24 @@ void sessionVideo(socket_ptr sock, RECT screen)
 #endif
 
 
-	BITMAPINFO bmi = {0};
-	bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
-	bmi.bmiHeader.biWidth = width;
-	bmi.bmiHeader.biHeight = -height;
-	bmi.bmiHeader.biPlanes = 1;
-	bmi.bmiHeader.biBitCount = 32;
-	bmi.bmiHeader.biCompression = BI_RGB;
-
-	RGBQUAD *pPixels = new RGBQUAD[width * height]; 
 
 	FPS fps;
+	RGBQUAD* pPixels;
 	while(true){
 
-		// copy from the desktop device context to the bitmap device context
-		BitBlt( hDest, 0,0, width, height, hdc, screen.left, screen.top, SRCCOPY);
-
-		GetDIBits(
-			hDest,
-			hbDesktop,
-			0,
-			height,
-			pPixels,
-			&bmi,
-			DIB_RGB_COLORS
-		);
+		int rc = capture.getNextFrame(&pPixels);
+		if (SUCCEEDED(rc)) {
 
 #ifdef OpenCV_FOUND
-		Mat image(Size(width, height), CV_8UC4, pPixels);
-		GpuMat gpuImage(image);
-		writer->write(gpuImage);
+			Mat image(Size(width, height), CV_8UC4, pPixels);
+			GpuMat gpuImage(image);
+			writer->write(gpuImage);
 #else if FFMPEG_FOUND
-		ffmpeg.write(width, height, pPixels);
+			ffmpeg.write(width, height, pPixels);
 #endif
-
-		fps.newFrame();
+			fps.newFrame();
+		}
+		capture.doneNextFrame();
 	}
 #ifdef OpenCV_FOUND
 #else if FFMPEG_FOUND
