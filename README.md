@@ -41,8 +41,10 @@ make
 
 ###To compile the server in windows###
 - Install CMAKE and Boost
+- Compile boost
+  - I used "bjam --toolset=msvc-10.0 address-model=64 --build-type=complete" to compile under 64 bit mode
 - In cmake under the Server folder
-  - Set BOOST_ROOT to the root of the Boost folder
+  - Set BOOST_ROOT to the root of the Boost folder "C:/boost_1_51_0" on my machine
 - Build, I used Visual Studio
 - Optional, either OpenCV or FFMPEG
   - Install OpenCV (3.0 from GIT) in order to use the encoder in an Nvidia GPU
