@@ -9,6 +9,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
+#include <bounded_buffer.h>
 
 #include "fps.h"
 #include "monitor.h"
@@ -21,16 +22,12 @@
 	#include "WDDMCapture.h"
 #endif
 
-#ifdef OpenCV_FOUND
-	#include <opencv2/opencv.hpp>
-	#include <opencv2/cudacodec.hpp>
-	#include <opencv2/highgui.hpp>
-	using namespace cv;
-	using namespace cuda;
-	using namespace cudacodec;
-#endif
 #ifdef FFMPEG_FOUND
 	#include "FFMPEG_encoding.hpp"
+#endif
+
+#ifdef NVENCODER_FOUND
+	#include "NV_encoding.hpp"
 #endif
 
 using namespace std;
@@ -41,90 +38,66 @@ const int max_length = 1024;
 
 typedef boost::shared_ptr<tcp::socket> socket_ptr;
 
-#ifdef OpenCV_FOUND
-class StreamEncoder : public EncoderCallBack
-{
-public:
-	StreamEncoder(socket_ptr sock){
-        int buf_size = 10 * 1024; // TODO, set the right buffer size. Needs to be small enough to have at least one buffer per frame.
-        buf_.resize(buf_size);
-		this->sock = sock;
-	}
+bounded_buffer<RGBQUAD*> screenToSendQueue(2);
 
-    ~StreamEncoder() {
-	}
+void threadScreenCapture(RECT screen){
+	int height = screen.bottom - screen.top;
+	int width = screen.right - screen.left;
 
-    //! callback function to signal the start of bitstream that is to be encoded
-    //! callback must allocate host buffer for CUDA encoder and return pointer to it and it's size
-    uchar* acquireBitStream(int* bufferSize) {
-        *bufferSize = static_cast<int>(buf_.size());
-        return &buf_[0];
-	}
-
-    //! callback function to signal that the encoded bitstream is ready to be written to file
-    void releaseBitStream(unsigned char* data, int size) {
-		write(*sock, buffer((char*)data, size));
-	}
-
-    //! callback function to signal that the encoding operation on the frame has started
-    void onBeginFrame(int frameNumber, PicType picType) {
-	}
-
-    //! callback function signals that the encoding operation on the frame has finished
-    void onEndFrame(int frameNumber, PicType picType) {
-	}
-
-private:
-    vector<uchar> buf_;
-	socket_ptr sock;
-	FPS fps;
-};
+#ifdef DIRECTX_FOUND
+	WDDMCapture capture;
+#else
+	GDICapture capture;
 #endif
+
+	capture.init(screen);
+
+	RGBQUAD* pPixels;
+	while(true){
+		int rc = capture.getNextFrame(&pPixels);
+		if (SUCCEEDED(rc)) {
+			RGBQUAD* pixCopy = new RGBQUAD[width * height];
+			memcpy(pixCopy, pPixels, width * height * sizeof(RGBQUAD));
+			screenToSendQueue.push_front(pixCopy);
+		}
+		capture.doneNextFrame();
+	}
+}
 
 void sessionVideo(socket_ptr sock, RECT screen)
 {
-	#ifdef DIRECTX_FOUND
-	WDDMCapture capture;
-	#else
-	GDICapture capture;
-	#endif
-
-	capture.init(screen);
 	
 	// get the height and width of the screen
 	int height = screen.bottom - screen.top;
 	int width = screen.right - screen.left;
 
-#ifdef OpenCV_FOUND
-	Ptr<StreamEncoder> callback(new StreamEncoder(sock));
-	Ptr<cudacodec::VideoWriter> writer = createVideoWriter(callback, Size(width, height), 30); // TODO, find the right FPS
-#else if FFMPEG_FOUND
+#ifdef NVENCODER_FOUND
+	NV_encoding nv_encoding;
+	nv_encoding.load(width, height, sock);
+#elif defined(FFMPEG_FOUND)
 	FFMPEG_encoding ffmpeg;
 	ffmpeg.load(width, height, sock);
 #endif
 
-
+	boost::thread t(boost::bind(threadScreenCapture, screen));
 
 	FPS fps;
 	RGBQUAD* pPixels;
 	while(true){
+		screenToSendQueue.pop_back(&pPixels);
 
-		int rc = capture.getNextFrame(&pPixels);
-		if (SUCCEEDED(rc)) {
-
-#ifdef OpenCV_FOUND
-			Mat image(Size(width, height), CV_8UC4, pPixels);
-			GpuMat gpuImage(image);
-			writer->write(gpuImage);
-#else if FFMPEG_FOUND
-			ffmpeg.write(width, height, pPixels);
+#ifdef NVENCODER_FOUND
+		nv_encoding.write(width, height, pPixels);
+#elif defined(FFMPEG_FOUND)
+		ffmpeg.write(width, height, pPixels);
 #endif
-			fps.newFrame();
-		}
-		capture.doneNextFrame();
+		fps.newFrame();
+
+		free(pPixels);
 	}
-#ifdef OpenCV_FOUND
-#else if FFMPEG_FOUND
+#ifdef NVENCODER_FOUND
+	nv_encoding.close();
+#elif defined(FFMPEG_FOUND)
 	ffmpeg.close();
 #endif
 }

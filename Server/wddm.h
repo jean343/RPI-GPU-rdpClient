@@ -10,6 +10,7 @@
 
 #include <DXGItype.h>
 #include <D3D11.h>
+#pragma comment (lib, "d3d11.lib") 
 #include <dxgi1_2.h>
 
 #include <tchar.h>
@@ -71,7 +72,9 @@ public:
 
 		for (DriverTypeIndex = 0; DriverTypeIndex < NumDriverTypes; ++DriverTypeIndex)
 		{
-			status = D3D11CreateDevice(NULL, DriverTypes[DriverTypeIndex], NULL, 0, FeatureLevels, NumFeatureLevels,
+			status = D3D11CreateDevice(NULL, DriverTypes[DriverTypeIndex], NULL, 
+				D3D11_CREATE_DEVICE_DEBUG,
+				FeatureLevels, NumFeatureLevels,
 									D3D11_SDK_VERSION, &gDevice, &FeatureLevel, &gContext);
 			if (SUCCEEDED(status))
 				break;
@@ -298,7 +301,6 @@ public:
 	int wf_dxgi_getPixelData(BYTE** data, int* pitch, RECT* invalid)
 	{
 		HRESULT status;
-		D3D11_BOX Box;
 		DXGI_MAPPED_RECT mappedRect;
 		D3D11_TEXTURE2D_DESC tDesc;
 
@@ -314,12 +316,6 @@ public:
 		tDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 		tDesc.MiscFlags = 0;
 
-		Box.top = invalid->top;
-		Box.left = invalid->left;
-		Box.right = invalid->right;
-		Box.bottom = invalid->bottom;
-		Box.front = 0;
-		Box.back = 1;
 
 		status = gDevice->CreateTexture2D(&tDesc, NULL, &sStage);
 
@@ -329,6 +325,14 @@ public:
 			exit(1);
 			return 1;
 		}
+		
+		D3D11_BOX Box;
+		Box.top = invalid->top;
+		Box.left = invalid->left;
+		Box.right = invalid->right;
+		Box.bottom = invalid->bottom;
+		Box.front = 0;
+		Box.back = 1;
 
 		gContext->CopySubresourceRegion((ID3D11Resource*) sStage, 0,0,0,0, (ID3D11Resource*) gAcquiredDesktopImage, 0, &Box);	 
 
@@ -368,7 +372,10 @@ public:
 
 		status = gOutputDuplication->ReleaseFrame();
 
-		if (FAILED(status))
+		if (status == DXGI_ERROR_INVALID_CALL){
+			_tprintf(_T("Failed to release frame DXGI_ERROR_INVALID_CALL\n"));
+			return 1;
+		} else if (FAILED(status))
 		{
 			_tprintf(_T("Failed to release frame\n"));
 			return 1;
