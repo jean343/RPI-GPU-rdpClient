@@ -72,10 +72,11 @@ public:
 
 		for (DriverTypeIndex = 0; DriverTypeIndex < NumDriverTypes; ++DriverTypeIndex)
 		{
-			status = D3D11CreateDevice(NULL, DriverTypes[DriverTypeIndex], NULL, 
-				D3D11_CREATE_DEVICE_DEBUG,
-				FeatureLevels, NumFeatureLevels,
-									D3D11_SDK_VERSION, &gDevice, &FeatureLevel, &gContext);
+			/*status = D3D11CreateDevice(NULL, DriverTypes[DriverTypeIndex], NULL, D3D11_CREATE_DEVICE_DEBUG, FeatureLevels, NumFeatureLevels,
+			D3D11_SDK_VERSION, &gDevice, &FeatureLevel, &gContext);
+			*/
+			status = D3D11CreateDevice(NULL, DriverTypes[DriverTypeIndex], NULL, NULL, FeatureLevels, NumFeatureLevels,
+				D3D11_SDK_VERSION, &gDevice, &FeatureLevel, &gContext);
 			if (SUCCEEDED(status))
 				break;
 
@@ -86,6 +87,25 @@ public:
 		{
 			_tprintf(_T("Failed to create device in InitializeDx\n"));
 			return 1;
+
+			//debug
+			/*
+			for (DriverTypeIndex = 0; DriverTypeIndex < NumDriverTypes; ++DriverTypeIndex)
+			{
+			status = D3D11CreateDevice(NULL, DriverTypes[DriverTypeIndex], NULL, NULL, FeatureLevels, NumFeatureLevels,
+			D3D11_SDK_VERSION, &gDevice, &FeatureLevel, &gContext);
+			if (SUCCEEDED(status))
+			break;
+
+			_tprintf(_T("D3D11CreateDevice returned [%d] for Driver Type %d\n"), status, DriverTypes[DriverTypeIndex]);
+			}
+
+			if (FAILED(status))
+			{
+			_tprintf(_T("Failed to create device in InitializeDx\n"));
+			return 1;
+			}
+			*/
 		}
 
 		return 0;
@@ -94,7 +114,7 @@ public:
 	int wf_dxgi_getDuplication(UINT screenID)
 	{
 		HRESULT status;
-		UINT i = 0;
+		UINT dTop, i = 0;
 		DXGI_OUTPUT_DESC desc;
 		IDXGIOutput * pOutput;
 		IDXGIDevice* DxgiDevice = NULL;
@@ -102,7 +122,7 @@ public:
 		IDXGIOutput* DxgiOutput = NULL;
 		IDXGIOutput1* DxgiOutput1 = NULL;
 
-		status = gDevice->QueryInterface(__uuidof(IDXGIDevice), (void**) &DxgiDevice);
+		status = gDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&DxgiDevice);
 
 		if (FAILED(status))
 		{
@@ -110,7 +130,7 @@ public:
 			return 1;
 		}
 
-		status = DxgiDevice->GetParent(__uuidof(IDXGIAdapter), (void**) &DxgiAdapter);
+		status = DxgiDevice->GetParent(__uuidof(IDXGIAdapter), (void**)&DxgiAdapter);
 		DxgiDevice->Release();
 		DxgiDevice = NULL;
 
@@ -137,14 +157,16 @@ public:
 
 			_tprintf(_T("Output %d: [%s] [%d]\n"), i, pDesc->DeviceName, pDesc->AttachedToDesktop);
 
-			/*if (pDesc->AttachedToDesktop)
-				dTop = i;*/
+			if (pDesc->AttachedToDesktop)
+				dTop = i;
 
 			pOutput->Release();
 			++i;
 		}
 
-		status = DxgiAdapter->EnumOutputs(screenID, &DxgiOutput);
+		dTop = 0;
+
+		status = DxgiAdapter->EnumOutputs(dTop, &DxgiOutput);
 		DxgiAdapter->Release();
 		DxgiAdapter = NULL;
 
@@ -154,7 +176,7 @@ public:
 			return 1;
 		}
 
-		status = DxgiOutput->QueryInterface(__uuidof(IDXGIOutput1), (void**) &DxgiOutput1);
+		status = DxgiOutput->QueryInterface(__uuidof(DxgiOutput1), (void**)&DxgiOutput1);
 		DxgiOutput->Release();
 		DxgiOutput = NULL;
 
@@ -164,7 +186,7 @@ public:
 			return 1;
 		}
 
-		status = DxgiOutput1->DuplicateOutput((IUnknown*)gDevice, &gOutputDuplication);
+		status = DxgiOutput1->DuplicateOutput(gDevice, &gOutputDuplication);
 		DxgiOutput1->Release();
 		DxgiOutput1 = NULL;
 
@@ -176,7 +198,7 @@ public:
 				return 1;
 			}
 
-			_tprintf(_T("Failed to get duplicate output. Status = %#X\n"), status);
+			_tprintf(_T("Failed to get duplicate output\n"));
 			return 1;
 		}
 
@@ -184,10 +206,10 @@ public:
 	}
 	int wf_dxgi_cleanup()
 	{
-		/*if (framesWaiting > 0)
+		if (framesWaiting > 0)
 		{
-			wf_dxgi_releasePixelData(wfi);
-		}*/
+			wf_dxgi_releasePixelData();
+		}
 
 		if (gAcquiredDesktopImage)
 		{
@@ -201,13 +223,13 @@ public:
 			gOutputDuplication = NULL;
 		}
 
-		if(gContext)
+		if (gContext)
 		{
 			gContext->Release();
 			gContext = NULL;
 		}
 
-		if(gDevice)
+		if (gDevice)
 		{
 			gDevice->Release();
 			gDevice = NULL;
@@ -223,6 +245,11 @@ public:
 		UINT DataBufferSize = 0;
 		BYTE* DataBuffer = NULL;
 		IDXGIResource* DesktopResource = NULL;
+
+		if (framesWaiting > 0)
+		{
+			wf_dxgi_releasePixelData();
+		}
 
 		if (gAcquiredDesktopImage)
 		{
@@ -243,57 +270,37 @@ public:
 			{
 				_tprintf(_T("Failed to acquire next frame with status=%#X\n"), status);
 				_tprintf(_T("Trying to reinitialize due to ACCESS LOST..."));
-				if (gAcquiredDesktopImage)
-				{
-					gAcquiredDesktopImage->Release();
-					gAcquiredDesktopImage = NULL;
-				}
-
-				if (gOutputDuplication)
-				{
-					gOutputDuplication->Release();
-					gOutputDuplication = NULL;
-				} 
-
-				wf_dxgi_getDuplication(0); // TODO
-
-				return 1;
+				wf_dxgi_getDuplication(0);
 			}
 			else
 			{
 				_tprintf(_T("Failed to acquire next frame with status=%#X\n"), status);
+				_tprintf(_T("\tAccumulated Frames: %d\n\tRects: %d\n\tBuffSize: %d\n"),
+					FrameInfo.AccumulatedFrames,
+					FrameInfo.RectsCoalesced,
+					FrameInfo.TotalMetadataBufferSize);
 
 				status = gOutputDuplication->ReleaseFrame();
 
 				if (FAILED(status))
 				{
-					_tprintf(_T("Failed to release frame with status=%d\n"), status);
+					_tprintf(_T("Failed to release frame with status=%d\n", status));
 				}
 
 				return 1;
 			}
 		}
 
-		status = DesktopResource->QueryInterface(__uuidof(ID3D11Texture2D), (void**) &gAcquiredDesktopImage);
+		status = DesktopResource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&gAcquiredDesktopImage);
 		DesktopResource->Release();
 		DesktopResource = NULL;
 
 		if (FAILED(status))
 		{
-				return 1;
+			return 1;
 		}
 
-		//wfi->framesWaiting = FrameInfo.AccumulatedFrames;
-
-		if (FrameInfo.AccumulatedFrames == 0)
-		{
-			status = gOutputDuplication->ReleaseFrame();
-
-			if (FAILED(status))
-			{
-				_tprintf(_T("Failed to release frame with status=%d\n"), status);
-			}
-		}
+		framesWaiting = FrameInfo.AccumulatedFrames;
 
 		return 0;
 	}
@@ -301,6 +308,7 @@ public:
 	int wf_dxgi_getPixelData(BYTE** data, int* pitch, RECT* invalid)
 	{
 		HRESULT status;
+		D3D11_BOX Box;
 		DXGI_MAPPED_RECT mappedRect;
 		D3D11_TEXTURE2D_DESC tDesc;
 
@@ -316,6 +324,12 @@ public:
 		tDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 		tDesc.MiscFlags = 0;
 
+		Box.top = invalid->top;
+		Box.left = invalid->left;
+		Box.right = invalid->right;
+		Box.bottom = invalid->bottom;
+		Box.front = 0;
+		Box.back = 1;
 
 		status = gDevice->CreateTexture2D(&tDesc, NULL, &sStage);
 
@@ -325,18 +339,10 @@ public:
 			exit(1);
 			return 1;
 		}
-		
-		D3D11_BOX Box;
-		Box.top = invalid->top;
-		Box.left = invalid->left;
-		Box.right = invalid->right;
-		Box.bottom = invalid->bottom;
-		Box.front = 0;
-		Box.back = 1;
 
-		gContext->CopySubresourceRegion((ID3D11Resource*) sStage, 0,0,0,0, (ID3D11Resource*) gAcquiredDesktopImage, 0, &Box);	 
+		gContext->CopySubresourceRegion(sStage, 0, 0, 0, 0, gAcquiredDesktopImage, 0, &Box);
 
-		status = sStage->QueryInterface(_uuidof(IDXGISurface), (void**) &surf);
+		status = sStage->QueryInterface(__uuidof(IDXGISurface), (void**)&surf);
 
 		if (FAILED(status))
 		{
@@ -372,19 +378,17 @@ public:
 
 		status = gOutputDuplication->ReleaseFrame();
 
-		if (status == DXGI_ERROR_INVALID_CALL){
-			_tprintf(_T("Failed to release frame DXGI_ERROR_INVALID_CALL\n"));
-			return 1;
-		} else if (FAILED(status))
+		if (FAILED(status))
 		{
 			_tprintf(_T("Failed to release frame\n"));
 			return 1;
 		}
 
-		//wfi->framesWaiting = 0;
+		framesWaiting = 0;
 
 		return 0;
 	}
 private:
 	ID3D11Texture2D* gAcquiredDesktopImage;
+	int framesWaiting;
 };
