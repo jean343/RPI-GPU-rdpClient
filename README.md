@@ -7,8 +7,9 @@ Hardware accelerated raspberry pi client for windows PC.
 It is more a proof-of-concept to show that OpenMAX can be used as a RDP viewer rather than a finished product.
 There is no authentication, use at your own risk.
 
-It uses a NVIDIA graphic card to encode H.264 video, and OpenMAX to display the video. It can achieve 1080P 30FPS RDP on a RPI with a relatively low latency of ~200ms.
+It uses a NVIDIA graphic card to encode H.264 video, and OpenMAX to display the video. It can achieve 1080P 60FPS RDP on a RPI with a relatively low latency of ~200ms on two monitors.
 When the GPU is not accessible on the server, it falls back to CPU encoding.
+It uses DXGI for accelerated desktop capture in Windows 8
 It can work in a Virtual machine in order to be a true thin client.
 
 ### To compile the client on the Raspberry PI ###
@@ -41,14 +42,13 @@ make
 
 ###To compile the server in windows###
 - Install CMAKE and Boost
-- Compile boost
-  - I used "bjam --toolset=msvc-10.0 address-model=64 --build-type=complete" to compile under 64 bit mode
+  - http://www.cmake.org/install/
+  - http://www.boost.org/users/download/
+- Compile boost or download the binaries
 - In cmake under the Server folder
   - Set BOOST_ROOT to the root of the Boost folder "C:/boost_1_51_0" on my machine
 - Build, I used Visual Studio
-- Optional, either OpenCV or FFMPEG
-  - Install OpenCV (3.0 from GIT) in order to use the encoder in an Nvidia GPU
-    - Set OpenCV_DIR to the root of OpenCV build folder
+- Optional, FFMPEG for a CPU fallback if the graphic card is unavailable
   - Download FFMPEG from http://ffmpeg.zeranoe.com/builds/, need the dev and shared
     - Set FFMPEG_ROOT to the root of FFMPEG dev folder
     - Add the bin folder of the shared zip to your path, or copy the DLLs
@@ -65,10 +65,6 @@ Whether you find a bug, have a great feature request feel free to get in touch.
 - There is no audio
 - There is no authentication, use only in a local LAN or under a VPN.
 - The software falls back to CPU encoding in a Virtual Machine, it is fast as it uses the x264 superfast preset, but the H.264 quality is reduced.
-- Uses ```GetDC``` and ```BitBlt``` to capture the screen, it works well on Win 7 and 8, but it is slow on XP.
-  - It does not work for full screen games using DirectX or OpenGL
-  - It could be improved by adding the hook from https://github.com/spazzarama/Direct3DHook
-  - It could be improved by using Win 8 ```DuplicateOutput``` WDDM 1.2
 
 ### NOTES ###
 From https://github.com/Hexxeh/rpi-update, update your pi:
