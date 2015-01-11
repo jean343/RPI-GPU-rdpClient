@@ -46,9 +46,7 @@ make
 - In cmake under the Server folder
   - Set BOOST_ROOT to the root of the Boost folder "C:/boost_1_51_0" on my machine
 - Build, I used Visual Studio
-- Optional, either OpenCV or FFMPEG
-  - Install OpenCV (3.0 from GIT) in order to use the encoder in an Nvidia GPU
-    - Set OpenCV_DIR to the root of OpenCV build folder
+- Optional, FFMPEG
   - Download FFMPEG from http://ffmpeg.zeranoe.com/builds/, need the dev and shared
     - Set FFMPEG_ROOT to the root of FFMPEG dev folder
     - Add the bin folder of the shared zip to your path, or copy the DLLs
