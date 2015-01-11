@@ -3,19 +3,19 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}")
 
 project( server )
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+# BOOST
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 find_package( Boost REQUIRED COMPONENTS thread )
 if(Boost_FOUND)
     message("Boost found!")
 endif()
-
-LINK_DIRECTORIES( "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v5.5/lib/Win32")
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${Boost_INCLUDE_DIR})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 
+# FFMPEG
 set(FFMPEG_ROOT "" CACHE FILEPATH "Root of the FFMPEG directory, which has README.txt")
 if (FFMPEG_ROOT)
 	FIND_PATH( FFMPEG_INCLUDE_DIR libavcodec/avcodec.h
@@ -36,12 +36,22 @@ if (FFMPEG_ROOT)
 	endif()
 endif()
 
-#Files for WDDM
+# DXGI and CUDA
+find_package(CUDA)
+if(CUDA_FOUND)
+    message("CUDA found!")
+endif()
 find_package( DirectX )
 include_directories(${DXGI_INCLUDES})
-include_directories( ${Boost_INCLUDE_DIRS} )
-include_directories( "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v6.5/include/" )
-set (CUDA_LIBRARIES "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v6.5/lib/Win32/cuda.lib;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v6.5/lib/Win32/cudart.lib")
+include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${CUDA_TOOLKIT_INCLUDE})
+CUDA_ADD_LIBRARY(cudalib STATIC
+    color_conversion.h
+    color_conversion.cu
+    OPTIONS -arch sm_20
+)
+TARGET_LINK_LIBRARIES(cudalib ${CUDA_LIBRARIES})
+set (CUDA_LINK_LIBRARIES "${CUDA_CUDA_LIBRARY};${CUDA_CUDART_LIBRARY};cudalib")
 
 #files for NVEncoder
 set (NVENCODER_FOUND 1)
@@ -52,12 +62,11 @@ SET(NVENCODER_HEADERS
   NV_encoding.hpp
   NvEncoder/NvEncoder.h
   NvEncoder/NvHWEncoder.h
-  color_conversion.cu
 )
 
 add_executable( server server.cpp config.h ${NVENCODER_SOURCE} ${NVENCODER_HEADERS} )
 
 
-target_link_libraries( server ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${DXGI_LIBRARIES} ${CUDA_LIBRARIES})
+target_link_libraries( server ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${DXGI_LIBRARIES} ${CUDA_LINK_LIBRARIES})
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
