@@ -8,7 +8,7 @@ typedef boost::shared_ptr<tcp::socket> socket_ptr;
 
 class NV_encoding {
 public:
-	void load(int width, int height, socket_ptr sock) {
+	void load(int width, int height, socket_ptr sock, UINT monitorID) {
 		NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
 		this->sock = sock;
@@ -26,6 +26,12 @@ public:
 		yuv[0] = new uint8_t[width*height];
         yuv[1] = new uint8_t[width*height / 4];
         yuv[2] = new uint8_t[width*height / 4];
+
+		// Init avi file
+		//char buffer[255];
+		//sprintf(buffer, "C:\\Monitor%d.avi", monitorID);
+		//ofs.open(buffer, std::ofstream::out | std::ofstream::binary);
+
 	}
 	void write(int width, int height, RGBQUAD *pPixels) {
 		
@@ -65,6 +71,8 @@ public:
 		if (dataPacket->size > 0) {
 			printf("Write frame (size=%5d)\n", dataPacket->size);
 
+			//ofs.write((char*)dataPacket->data, dataPacket->size);
+
 			boost::asio::write(*sock, buffer((char*)dataPacket->data, dataPacket->size));
 		}
 	}
@@ -87,4 +95,6 @@ private:
     uint8_t *yuv[3];
 	CNvEncoder* cNvEncoder;
 	DataPacket* dataPacket;
+
+	//std::ofstream ofs;
 };

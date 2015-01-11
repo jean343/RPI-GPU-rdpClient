@@ -6,7 +6,7 @@
 //
 
 #include <fstream>
-
+#include <algorithm>
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <bounded_buffer.h>
@@ -40,7 +40,7 @@ typedef boost::shared_ptr<tcp::socket> socket_ptr;
 
 bounded_buffer<RGBQUAD*> screenToSendQueue(2);
 
-void threadScreenCapture(RECT screen){
+void threadScreenCapture(UINT monitorID, RECT screen){
 	int height = screen.bottom - screen.top;
 	int width = screen.right - screen.left;
 
@@ -50,21 +50,24 @@ void threadScreenCapture(RECT screen){
 	GDICapture capture;
 #endif
 
-	capture.init(screen);
+	capture.init(monitorID, screen);
 
 	RGBQUAD* pPixels;
+	FPS fps;
 	while(true){
 		int rc = capture.getNextFrame(&pPixels);
-		if (SUCCEEDED(rc)) {
+		if (rc == 0) {
 			RGBQUAD* pixCopy = new RGBQUAD[width * height];
 			memcpy(pixCopy, pPixels, width * height * sizeof(RGBQUAD));
 			screenToSendQueue.push_front(pixCopy);
+
+			capture.doneNextFrame();
+			fps.newFrame();
 		}
-		capture.doneNextFrame();
 	}
 }
 
-void sessionVideo(socket_ptr sock, RECT screen)
+void sessionVideo(socket_ptr sock, UINT monitorID, RECT screen)
 {
 	
 	// get the height and width of the screen
@@ -73,13 +76,13 @@ void sessionVideo(socket_ptr sock, RECT screen)
 
 #ifdef NVENCODER_FOUND
 	NV_encoding nv_encoding;
-	nv_encoding.load(width, height, sock);
+	nv_encoding.load(width, height, sock, monitorID);
 #elif defined(FFMPEG_FOUND)
 	FFMPEG_encoding ffmpeg;
 	ffmpeg.load(width, height, sock);
 #endif
 
-	boost::thread t(boost::bind(threadScreenCapture, screen));
+	boost::thread t(boost::bind(threadScreenCapture, monitorID, screen));
 
 	FPS fps;
 	RGBQUAD* pPixels;
@@ -91,7 +94,7 @@ void sessionVideo(socket_ptr sock, RECT screen)
 #elif defined(FFMPEG_FOUND)
 		ffmpeg.write(width, height, pPixels);
 #endif
-		fps.newFrame();
+		//fps.newFrame();
 
 		free(pPixels);
 	}
@@ -189,7 +192,7 @@ void sessionKeystroke(socket_ptr sock, RECT screen)
 		}
 	}
 }
-void session(socket_ptr sock, RECT screenCoordinates)
+void session(socket_ptr sock, UINT monitorID, RECT screenCoordinates)
 {
 	try
 	{
@@ -204,7 +207,7 @@ void session(socket_ptr sock, RECT screenCoordinates)
 			throw boost::system::system_error(error); // Some other error.
 
 		if (data[0] == 'a'){
-			sessionVideo(sock, screenCoordinates);
+			sessionVideo(sock, monitorID, screenCoordinates);
 		} else if (data[0] == 'b'){
 			sessionKeystroke(sock, screenCoordinates);
 		} else {
@@ -217,14 +220,14 @@ void session(socket_ptr sock, RECT screenCoordinates)
 	}
 }
 
-void server(io_service& io_service, short port, RECT screenCoordinates)
+void server(io_service& io_service, short port, UINT monitorID, RECT screenCoordinates)
 {
 	tcp::acceptor a(io_service, tcp::endpoint(tcp::v4(), port));
 	for (;;)
 	{
 		socket_ptr sock(new tcp::socket(io_service));
 		a.accept(*sock);
-		boost::thread t(boost::bind(session, sock, screenCoordinates));
+		boost::thread t(boost::bind(session, sock, monitorID, screenCoordinates));
 	}
 }
 
@@ -259,13 +262,13 @@ int main(int argc, const char* argv[])
 	}
 	
 	//socket_ptr sock;
-	//sessionVideo(sock, screenCoordinates); // TODO test
+	//sessionVideo(sock, params.monitor, screenCoordinates); // TODO test
 
 	try
 	{
 		io_service io_service;
 
-		server(io_service, params.port, screenCoordinates);
+		server(io_service, params.port, params.monitor, screenCoordinates);
 	}
 	catch (exception& e)
 	{

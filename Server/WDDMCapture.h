@@ -6,11 +6,11 @@
 
 class WDDMCapture : public Capture {
 public:
-	void init(RECT screen)
+	void init(UINT monitorID, RECT screen)
 	{
 		this->screen = screen;
 
-		wddm.wf_dxgi_init();
+		wddm.wf_dxgi_init(monitorID, screen);
 
 	}
 	int getNextFrame(RGBQUAD** pPixels)

@@ -47,17 +47,19 @@ DXGI_OUTDUPL_FRAME_INFO FrameInfo;
 
 class WDDM {
 public:
-	int wf_dxgi_init()
+	int wf_dxgi_init(UINT screenID, RECT screen)
 	{
 		//not sure if needed
 		gAcquiredDesktopImage = NULL;
+
+		this->screen = screen;
 
 		if (wf_dxgi_createDevice() != 0)
 		{
 			return 1;
 		}
 
-		if (wf_dxgi_getDuplication(0) != 0)
+		if (wf_dxgi_getDuplication(screenID) != 0)
 		{
 			return 1;
 		}
@@ -155,7 +157,8 @@ public:
 				return 1;
 			}
 
-			_tprintf(_T("Output %d: [%s] [%d]\n"), i, pDesc->DeviceName, pDesc->AttachedToDesktop);
+		 wprintf(L"Output %d: [%s] [%s] (%d, %d, %d, %d)\n", i, pDesc->DeviceName, pDesc->AttachedToDesktop ? L"attached" : L"not attached",
+				pDesc->DesktopCoordinates.left, pDesc->DesktopCoordinates.top, pDesc->DesktopCoordinates.right, pDesc->DesktopCoordinates.bottom);
 
 			if (pDesc->AttachedToDesktop)
 				dTop = i;
@@ -164,7 +167,7 @@ public:
 			++i;
 		}
 
-		dTop = 0;
+		dTop = screenID;
 
 		status = DxgiAdapter->EnumOutputs(dTop, &DxgiOutput);
 		DxgiAdapter->Release();
@@ -324,10 +327,13 @@ public:
 		tDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 		tDesc.MiscFlags = 0;
 
-		Box.top = invalid->top;
-		Box.left = invalid->left;
-		Box.right = invalid->right;
-		Box.bottom = invalid->bottom;
+		INT OffsetX = screen.left;
+		INT OffsetY = screen.top;
+
+		Box.top = invalid->top - OffsetY;
+		Box.left = invalid->left - OffsetX;
+		Box.right = invalid->right - OffsetX;
+		Box.bottom = invalid->bottom - OffsetY;
 		Box.front = 0;
 		Box.back = 1;
 
@@ -391,4 +397,5 @@ public:
 private:
 	ID3D11Texture2D* gAcquiredDesktopImage;
 	int framesWaiting;
+	RECT screen;
 };
