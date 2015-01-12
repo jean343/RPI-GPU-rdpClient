@@ -16,10 +16,10 @@
 #include "params.h"
 #include "config.h"
 
-#include "GDICapture.h"
-
 #ifdef DIRECTX_FOUND
 	#include "WDDMCapture.h"
+#else
+	#include "GDICapture.h"
 #endif
 
 #ifdef FFMPEG_FOUND

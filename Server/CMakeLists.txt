@@ -34,6 +34,11 @@ if (FFMPEG_ROOT)
 		set (FFMPEG_LIBRARIES "${FFMPEG_LIBRARY_avcodec};${FFMPEG_LIBRARY_avutil}")
 		message("FFMPEG found!")
 	endif()
+	if (FFMPEG_FOUND)
+		SET(FFMPEG_HEADER
+		  FFMPEG_encoding.hpp
+		)
+	endif()
 endif()
 
 # DXGI and CUDA
@@ -53,18 +58,38 @@ CUDA_ADD_LIBRARY(cudalib STATIC
 TARGET_LINK_LIBRARIES(cudalib ${CUDA_LIBRARIES})
 set (CUDA_LINK_LIBRARIES "${CUDA_CUDA_LIBRARY};${CUDA_CUDART_LIBRARY};cudalib")
 
-#files for NVEncoder
-set (NVENCODER_FOUND 1)
-SET(NVENCODER_SOURCE
-  NvEncoder/NvHWEncoder.cpp
-)
-SET(NVENCODER_HEADERS
-  NV_encoding.hpp
-  NvEncoder/NvEncoder.h
-  NvEncoder/NvHWEncoder.h
+if (DIRECTX_FOUND)
+	#files for NVEncoder
+	set (NVENCODER_FOUND 1)
+	SET(NVENCODER_SOURCE
+	  NvEncoder/NvHWEncoder.cpp
+	)
+	SET(NVENCODER_HEADERS
+	  NV_encoding.hpp
+	  NvEncoder/NvEncoder.h
+	  NvEncoder/NvHWEncoder.h
+	  NvEncoder/nvEncodeAPI.h
+	)
+	SET(Capture_HEADER
+	  wddm.h
+	  WDDMCapture.h
+	)
+else()
+	SET(Capture_HEADER
+	  GDICapture.h
+	)
+endif()
+
+SET(COMMON_SOURCE
+  config.h
+  bounded_buffer.h
+  Capture.h
+  fps.h
+  monitor.h
+  params.h
 )
 
-add_executable( server server.cpp config.h ${NVENCODER_SOURCE} ${NVENCODER_HEADERS} )
+add_executable( server server.cpp ${COMMON_SOURCE} ${NVENCODER_SOURCE} ${NVENCODER_HEADERS} ${FFMPEG_HEADER} ${Capture_HEADER} )
 
 
 target_link_libraries( server ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${DXGI_LIBRARIES} ${CUDA_LINK_LIBRARIES})
