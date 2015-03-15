@@ -40,8 +40,8 @@ ID3D11Device* gDevice = NULL;
 ID3D11DeviceContext* gContext = NULL;
 IDXGIOutputDuplication* gOutputDuplication = NULL;
 
-IDXGISurface* surf;
-ID3D11Texture2D* sStage;
+IDXGISurface* surf = NULL;
+ID3D11Texture2D* sStage = NULL;
 
 DXGI_OUTDUPL_FRAME_INFO FrameInfo;
 
@@ -376,11 +376,15 @@ public:
 	{
 		HRESULT status;
 
-		surf->Unmap();
-		surf->Release();
-		surf = NULL;
-		sStage->Release();
-		sStage = NULL;
+		if (surf) {
+			surf->Unmap();
+			surf->Release();
+			surf = NULL;
+		}
+		if (sStage) {
+			sStage->Release();
+			sStage = NULL;
+		}
 
 		status = gOutputDuplication->ReleaseFrame();
 
