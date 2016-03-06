@@ -18,4 +18,4 @@
 - Open Server\build\server.sln in Visual Studio
   - Select Release and Build the Solution
 - Open a command prompt and cd to Server\build\Release
-  - Run server monitor 0 port 8080
+  - Run "server monitor 0 port 8080"
