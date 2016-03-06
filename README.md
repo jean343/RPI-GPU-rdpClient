@@ -41,13 +41,7 @@ make
 ./client <host> <port>
 
 ###To compile the server in windows###
-- Install CMAKE and Boost
-  - http://www.cmake.org/install/
-  - http://www.boost.org/users/download/
-- Compile boost or download the binaries
-- In cmake under the Server folder
-  - Set BOOST_ROOT to the root of the Boost folder "C:/boost_1_51_0" on my machine
-- Build, I used Visual Studio
+- See the guide at https://github.com/jean343/RPI-GPU-rdpClient/blob/master/WindowsCompileGuide.md
 - Optional, FFMPEG for a CPU fallback if the graphic card is unavailable
   - Download FFMPEG from http://ffmpeg.zeranoe.com/builds/, need the dev and shared
     - Set FFMPEG_ROOT to the root of FFMPEG dev folder
