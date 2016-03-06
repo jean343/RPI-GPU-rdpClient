@@ -15,8 +15,7 @@
   - Compile and Generate
   - It should look like the following:
   - ![ScreenShot](http://i.imgur.com/mYbxmyn.png)
-- Build, I used Visual Studio
-- Optional, FFMPEG for a CPU fallback if the graphic card is unavailable
-  - Download FFMPEG from http://ffmpeg.zeranoe.com/builds/, need the dev and shared
-    - Set FFMPEG_ROOT to the root of FFMPEG dev folder
-    - Add the bin folder of the shared zip to your path, or copy the DLLs
+- Open Server\build\server.sln in Visual Studio
+  - Select Release and Build the Solution
+- Open a command prompt and cd to Server\build\Release
+  - Run server monitor 0 port 8080
