@@ -1,1 +1,17 @@
-
+###To compile the server in windows with NVIDIA card###
+- Install BOOST
+  - http://www.boost.org/users/download/
+  - I downloaded boost_1_60_0-msvc-10.0-32.exe from https://sourceforge.net/projects/boost/files/boost-binaries/1.60.0/ for Visual Studio 2010
+- Install CMAKE, I took cmake-3.5.0-rc3-win32-x86.msi
+  - http://www.cmake.org/install/
+- Install Nvidia CUDA from https://developer.nvidia.com/cuda-downloads
+- Open CMAKE
+  - In the field: where is the source code, have the path to the subfolder Server from RPI-GPU-rdpClient git.
+  - In the field: Where to build the binaries, make a subfolder build under Server
+  - Press configure, I selected "Visual Studio 10 2010"
+  - Click on Add Entry and enter BOOST_ROOT to the root of the Boost folder "C:/local/boost_1_60_0"
+- Build, I used Visual Studio
+- Optional, FFMPEG for a CPU fallback if the graphic card is unavailable
+  - Download FFMPEG from http://ffmpeg.zeranoe.com/builds/, need the dev and shared
+    - Set FFMPEG_ROOT to the root of FFMPEG dev folder
+    - Add the bin folder of the shared zip to your path, or copy the DLLs
