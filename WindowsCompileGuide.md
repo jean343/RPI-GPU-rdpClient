@@ -13,7 +13,8 @@
   - Do the same for BOOST_LIBRARYDIR and set it to "C:/local/boost_1_60_0/lib32-msvc-10.0"
   - I had to set CUDA_TOOLKIT_ROOT_DIR to "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5"
   - Compile and Generate
-  - ![ScreenShot](http://s10.postimg.org/mlf603dvr/Build.png)
+  - It should look like the following:
+  - ![ScreenShot](http://i.imgur.com/mYbxmyn.png)
 - Build, I used Visual Studio
 - Optional, FFMPEG for a CPU fallback if the graphic card is unavailable
   - Download FFMPEG from http://ffmpeg.zeranoe.com/builds/, need the dev and shared
