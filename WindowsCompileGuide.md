@@ -1,4 +1,4 @@
-###To compile the server in windows with NVIDIA card###
+###To compile the server in windows WITH NVIDIA card###
 - Install BOOST
   - http://www.boost.org/users/download/
   - I downloaded boost_1_60_0-msvc-10.0-32.exe from https://sourceforge.net/projects/boost/files/boost-binaries/1.60.0/ for Visual Studio 2010
@@ -12,6 +12,30 @@
   - Click on Add Entry and enter BOOST_ROOT to the root of the Boost folder "C:/local/boost_1_60_0"
   - Do the same for BOOST_LIBRARYDIR and set it to "C:/local/boost_1_60_0/lib32-msvc-10.0"
   - I had to set CUDA_TOOLKIT_ROOT_DIR to "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5"
+  - Compile and Generate
+  - It should look like the following:
+  - ![ScreenShot](http://i.imgur.com/mYbxmyn.png)
+- Open Server\build\server.sln in Visual Studio
+  - Select Release and Build the Solution
+- Open a command prompt and cd to Server\build\Release
+  - Run "server monitor 0 port 8080"
+
+###To compile the server in windows WITHOUT NVIDIA card###
+- Install BOOST
+  - http://www.boost.org/users/download/
+  - I downloaded boost_1_60_0-msvc-10.0-32.exe from https://sourceforge.net/projects/boost/files/boost-binaries/1.60.0/ for Visual Studio 2010
+- Install CMAKE, I took cmake-3.5.0-rc3-win32-x86.msi
+  - http://www.cmake.org/install/
+- Open CMAKE
+  - In the field: where is the source code, have the path to the subfolder Server from RPI-GPU-rdpClient git.
+  - In the field: Where to build the binaries, make a subfolder build under Server
+  - Press configure, I selected "Visual Studio 10 2010"
+  - Click on Add Entry and enter BOOST_ROOT to the root of the Boost folder "C:/local/boost_1_60_0"
+  - Do the same for BOOST_LIBRARYDIR and set it to "C:/local/boost_1_60_0/lib32-msvc-10.0"
+  - Download FFMPEG from http://ffmpeg.zeranoe.com/builds/, need the dev and shared
+    - Set FFMPEG_ROOT to the root of FFMPEG dev folder with the README.txt
+      - In my case "RPI-GPU-rdpClient\ffmpeg\ffmpeg-20160307-git-6f5048f-win32-dev"
+    - Add the bin folder of the shared zip to your path, or copy the DLLs
   - Compile and Generate
   - It should look like the following:
   - ![ScreenShot](http://i.imgur.com/mYbxmyn.png)
