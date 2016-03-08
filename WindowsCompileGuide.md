@@ -45,4 +45,4 @@
   - Select Release and Build the Solution
 - Open a command prompt and cd to Server\build\Release
   - Run "server monitor 0 port 8080"
-If missing <inttypes.h>, check http://stackoverflow.com/questions/13266868/ffmpeg-inttypes-h-not-found-error
+- If missing <inttypes.h>, check http://stackoverflow.com/questions/13266868/ffmpeg-inttypes-h-not-found-error
