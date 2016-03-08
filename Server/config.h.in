@@ -1,5 +1,4 @@
-#cmakedefine FFMPEG_FOUND
-
-#cmakedefine DIRECTX_FOUND
-
-#cmakedefine NVENCODER_FOUND
+#cmakedefine HAS_CUDA
+#cmakedefine HAS_WDDM
+#cmakedefine HAS_NVENC
+#cmakedefine HAS_FFMPEG

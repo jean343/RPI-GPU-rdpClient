@@ -16,17 +16,17 @@
 #include "params.h"
 #include "config.h"
 
-#ifdef DIRECTX_FOUND
+#ifdef HAS_WDDM
 	#include "WDDMCapture.h"
 #else
 	#include "GDICapture.h"
 #endif
 
-#ifdef FFMPEG_FOUND
+#ifdef HAS_FFMPEG
 	#include "FFMPEG_encoding.hpp"
 #endif
 
-#ifdef NVENCODER_FOUND
+#ifdef HAS_NVENC
 	#include "NV_encoding.hpp"
 #endif
 
@@ -44,7 +44,7 @@ void threadScreenCapture(UINT monitorID, RECT screen){
 	int height = screen.bottom - screen.top;
 	int width = screen.right - screen.left;
 
-#ifdef DIRECTX_FOUND
+#ifdef HAS_WDDM
 	WDDMCapture capture;
 #else
 	GDICapture capture;
@@ -74,10 +74,10 @@ void sessionVideo(socket_ptr sock, UINT monitorID, RECT screen)
 	int height = screen.bottom - screen.top;
 	int width = screen.right - screen.left;
 
-#ifdef NVENCODER_FOUND
+#ifdef HAS_NVENC
 	NV_encoding nv_encoding;
 	nv_encoding.load(width, height, sock, monitorID);
-#elif defined(FFMPEG_FOUND)
+#elif defined(HAS_FFMPEG)
 	FFMPEG_encoding ffmpeg;
 	ffmpeg.load(width, height, sock);
 #endif
@@ -89,18 +89,18 @@ void sessionVideo(socket_ptr sock, UINT monitorID, RECT screen)
 	while(true){
 		screenToSendQueue.pop_back(&pPixels);
 
-#ifdef NVENCODER_FOUND
+#ifdef HAS_NVENC
 		nv_encoding.write(width, height, pPixels);
-#elif defined(FFMPEG_FOUND)
+#elif defined(HAS_FFMPEG)
 		ffmpeg.write(width, height, pPixels);
 #endif
 		//fps.newFrame();
 
 		free(pPixels);
 	}
-#ifdef NVENCODER_FOUND
+#ifdef HAS_NVENC
 	nv_encoding.close();
-#elif defined(FFMPEG_FOUND)
+#elif defined(HAS_FFMPEG)
 	ffmpeg.close();
 #endif
 }

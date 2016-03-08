@@ -4,7 +4,7 @@
 
 class GDICapture : public Capture {
 public:
-	void init(RECT screen)
+	void init(UINT monitorID, RECT screen)
 	{
 		this->screen = screen;
 		hdc = GetDC(NULL); // get the desktop device context
