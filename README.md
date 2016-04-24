@@ -8,7 +8,7 @@ It is more a proof-of-concept to show that OpenMAX can be used as a RDP viewer r
 There is no authentication, use at your own risk.
 
 It uses a NVIDIA graphic card to encode H.264 video, and OpenMAX to display the video. It can achieve 1080P 60FPS RDP on a RPI with a relatively low latency of ~200ms on two monitors.
-When the GPU is not accessible on the server, it falls back to CPU encoding.
+When the GPU is not accessible on the server, it falls back to CPU encoding at a lower FPS, around 10FPS depending on the CPU.
 It uses DXGI for accelerated desktop capture in Windows 8
 It can work in a Virtual machine in order to be a true thin client.
 
