@@ -21,6 +21,7 @@
   - Run "server monitor 0 port 8080"
 
 ###To compile the server in windows WITHOUT NVIDIA card###
+Note, the FPS will be significantly lower without a NVIDIA card, around 10FPS depending on the CPU.
 - Install BOOST
   - http://www.boost.org/users/download/
   - I downloaded boost_1_60_0-msvc-10.0-32.exe from https://sourceforge.net/projects/boost/files/boost-binaries/1.60.0/ for Visual Studio 2010
