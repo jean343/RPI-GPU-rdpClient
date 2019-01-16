@@ -52,7 +52,7 @@ if(CUDA_FOUND)
   CUDA_ADD_LIBRARY(cudalib STATIC
       color_conversion.h
       color_conversion.cu
-      OPTIONS -arch sm_20
+      OPTIONS -arch sm_30
   )
   TARGET_LINK_LIBRARIES(cudalib ${CUDA_LIBRARIES})
   set (CUDA_LINK_LIBRARIES "${CUDA_CUDA_LIBRARY};${CUDA_CUDART_LIBRARY};cudalib")

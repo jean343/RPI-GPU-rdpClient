@@ -287,7 +287,7 @@ public:
 
 				if (FAILED(status))
 				{
-					_tprintf(_T("Failed to release frame with status=%d\n", status));
+					_tprintf(_T("Failed to release frame with status=%d\n"), status);
 				}
 
 				return 1;
