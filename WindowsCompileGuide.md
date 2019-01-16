@@ -14,7 +14,7 @@
   - I had to set CUDA_TOOLKIT_ROOT_DIR to "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.0"
   - Configure and Generate
   - It should look like the following:
-  - ![ScreenShot](https://imgur.com/a/xNxgiHy)
+  - ![ScreenShot](https://imgur.com/Htlr9NP)
 - Open Server\build\server.sln in Visual Studio
   - Select Release and Build the Solution
 - Open a command prompt and cd to Server\build\Release
